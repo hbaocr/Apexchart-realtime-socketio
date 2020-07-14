@@ -38,6 +38,14 @@ function shift_one(window_size = wd_size) {
     }
 }
 
+function shift_n(n,window_size = wd_size) {
+    // move 1 point
+    let dat = pool_data.splice(0,n);
+    window_data.splice(0,n);
+    window_data = [...window_data, ...dat];
+   
+}
+
 
 function slide_window_render(window_size) {
     let lead_num = pool_data.length;
@@ -55,9 +63,10 @@ function slide_window_render(window_size) {
                     shift_one(window_size);// move 1 point
                 } else {
                     dist = window_data.length / 3;
-                    for (i = 0; i < dist; i++) { //shift 1/3 window_size
-                        shift_one(window_size);
-                    }
+                    // for (i = 0; i < dist; i++) { //shift 1/3 window_size
+                    //     shift_one(window_size);
+                    // }
+                    shift_n(Math.floor(dist));
 
                 }
             }
