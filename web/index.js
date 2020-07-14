@@ -3,6 +3,7 @@ var socket = io();
 const { fromEvent, Observable, of, interval } = rxjs;
 const { map, mergeMap, delay, bufferTime, concatAll, concatMap } = rxjs.operators;
 let wd_size = 200;
+let slide_speed=2;
 let pool_data = [];
 
 let window_data = [];
@@ -38,16 +39,16 @@ function shift_one(window_size = wd_size) {
     }
 }
 
-function shift_n(n,window_size = wd_size) {
+function shift_n(speed_n,window_size = wd_size) {
     // move 1 point
-    let dat = pool_data.splice(0,n);
-    window_data.splice(0,n);
+    let dat = pool_data.splice(0,speed_n);
+    window_data.splice(0,speed_n);
     window_data = [...window_data, ...dat];
    
 }
 
 
-function slide_window_render(window_size) {
+function slide_window_render(speed=2,window_size) {
     let lead_num = pool_data.length;
 
     if (chart) {
@@ -55,17 +56,15 @@ function slide_window_render(window_size) {
 
             if (window_data.length < window_size) {
                 shift_one(window_size);// move 1 point
+                //shift_n(speed)
             } else { // full window
 
                 let dist = lead_num - window_size + 1;
-                if (dist <= window_size) {
-
-                    shift_one(window_size);// move 1 point
+                if (dist <= window_size) {                    
+                    shift_n(speed);
                 } else {
                     dist = window_data.length / 3;
-                    // for (i = 0; i < dist; i++) { //shift 1/3 window_size
-                    //     shift_one(window_size);
-                    // }
+          
                     shift_n(Math.floor(dist));
 
                 }
@@ -84,7 +83,7 @@ function slide_window_render(window_size) {
 
 function period_render(t_render) {
     setTimeout(async () => {
-        slide_window_render(wd_size);
+        slide_window_render(slide_speed,wd_size);
         console.log(`${new Date().getTime()} t_render : ${t_render}, window_size:${window_data.length} ,lead_num: ${pool_data.length}`);
         period_render(t_render);
     }, t_render);
