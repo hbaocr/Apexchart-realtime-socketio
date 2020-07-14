@@ -19,7 +19,7 @@ let cnt = interval/fs;
 let buffer =[];
 let socket_sav ;
 setInterval(()=>{
-    let utc = new Date().getTime() / 1000;
+    let utc = new Date().getTime()/1000;
     let xdata=utc;
     let ydata = 100*Math.sin(2*10*Math.PI*1/fs*xdata);
     buffer.push({x:xdata, y:ydata});

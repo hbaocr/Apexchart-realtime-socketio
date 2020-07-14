@@ -1,140 +1,128 @@
-
-
-var data = []
-var TICKINTERVAL = 86400000
-let XAXISRANGE = 777600000
-
 let chart;
 var socket = io();
-function shift(arr, direction, n) {
-    var times = n > arr.length ? n % arr.length : n;
-    return arr.concat(arr.splice(0, (direction > 0 ? arr.length - times : times)));
- }
-
-function render_chart(new_dat) {
-    try {
-
-        if (chart) {
-            data = [...data, ...new_dat];
-            chart.updateSeries([{
-                data: data
-            }])
-        }
-    } catch (error) {
-
-    }
-}
-
-
-function render_chart_window(new_dat,window_size) {
-    try {
-
-        if (chart) {
-            data = [...data, ...new_dat];
-            if(data.length>window_size){
-                //let rm = data.length - window_size;
-               // data = shift(data,0,rm);
-               data.shift();
-            }
-            chart.updateSeries([{
-                data: data
-            }])
-        }
-    } catch (error) {
-
-    }
-}
-
-
-
 const { fromEvent, Observable, of, interval } = rxjs;
-const { map, mergeMap, delay, bufferTime, concatAll,concatMap } = rxjs.operators;
+const { map, mergeMap, delay, bufferTime, concatAll, concatMap } = rxjs.operators;
+let wd_size = 200;
+let pool_data = [];
 
+let window_data = [];
+let t_render = 100;
 const observable = fromEvent(socket, 'newmsg');
 observable.pipe(
     mergeMap(json => JSON.parse(json)),// flatmap 
-    concatMap(x=>of(x).pipe(delay(40))),//delay each element in 20ms
+    concatMap(x => of(x).pipe(delay(20))),//delay each element in 20ms
     //bufferTime(100),//buffer untill 100ms then emit the array
 ).subscribe((msg) => {
-    console.log(new Date().getTime()+ '  |  ' +msg);
-    //render_chart([msg]);
-    render_chart_window([msg],200);
+    //console.log('--->event new msg'+ new Date().getTime() +JSON.stringify(msg));
+    pool_data.push(msg);
 });
 
+let render_dat = [];
+function build_render_data(window_dat) {
+    render_dat = [];
+    render_dat[0] = [];//x
+    render_dat[1] = [];//y
+
+    window_dat.map((data) => {
+        render_dat[0].push(data.x);
+        render_dat[1].push(data.y);
+    })
+}
+
+function shift_one(window_size = wd_size) {
+    // move 1 point
+    let dat = pool_data.shift();
+    window_data = [...window_data, dat];
+    if (window_data.length > window_size) {
+        window_data.shift();
+    }
+}
 
 
+function slide_window_render(window_size) {
+    let lead_num = pool_data.length;
 
+    if (chart) {
+        if (lead_num > 0) {
 
+            if (window_data.length < window_size) {
+                shift_one(window_size);// move 1 point
+            } else { // full window
 
-window.onload = () => {
-    const el = document.getElementById('chart');
-    var options = {
-        series: [{
-            data: data.slice()
-        }],
-        chart: {
-            id: 'realtime',
-            height: 350,
-            type: 'line',
-            animations: {
-                enabled: true,
-                easing: 'linear',
-                animateGradually: {
-                    enabled: true,
-                    delay: 150
-                },
-                dynamicAnimation: {
-                    speed: 1000
+                let dist = lead_num - window_size + 1;
+                if (dist <= window_size) {
+
+                    shift_one(window_size);// move 1 point
+                } else {
+                    dist = window_data.length / 3;
+                    for (i = 0; i < dist; i++) { //shift 1/3 window_size
+                        shift_one(window_size);
+                    }
+
                 }
-            },
-            toolbar: {
-                show: false
-            },
-            zoom: {
-                enabled: false
             }
-        },
-        dataLabels: {
-            enabled: false
-        },
-        stroke: {
-            curve: 'smooth',
-            width: 1,
-        },
-        title: {
-            text: 'ApexChart realtime',
-            align: 'left'
-        },
-        markers: {
-            size: 0
-        },
-        xaxis: {
-            type: 'datetime',
-            range: undefined,
-        },
-        yaxis: {
-            max: 100
-        },
-        legend: {
-            show: false
-        },
-    };
 
-    chart = new ApexCharts(el, options);
-    chart.render();
+            build_render_data(window_data);
+            chart.setData(render_dat);
+        }
+
+
+    }
 
 }
 
 
-// socket.on('newmsg', function (records) {
-//     try {
-//         let arr = JSON.parse(records);
-  
-//         if(chart){
-//             buff = [...buff,...arr];
-//         }
-//     } catch (error) {
 
-//     }
+function period_render(t_render) {
+    setTimeout(async () => {
+        slide_window_render(wd_size);
+        console.log(`${new Date().getTime()} t_render : ${t_render}, window_size:${window_data.length} ,lead_num: ${pool_data.length}`);
+        period_render(t_render);
+    }, t_render);
+}
+period_render(t_render);
 
-// })
+
+
+// let data = [
+//     [1546300800, 1546387200],    // x-values (timestamps)
+//     [35, 71],    // y-values (series 1)
+// ];
+
+let data = [];
+
+window.onload = () => {
+    //const el = document.getElementById('chart');
+    let opts = {
+        title: "My Chart",
+        id: "chart",
+        class: "my-chart",
+        width: 800,
+        height: 600,
+        series: [
+            {},
+            {
+                // initial toggled state (optional)
+                show: true,
+
+                spanGaps: false,
+
+                // in-legend display
+                label: "Y_value",
+                // value: (u, v) => v == null ? "-" : v.toFixed(2) + " MB",
+                stroke: "green",
+            }
+        ],
+        axes: [
+            {},
+            {
+                scale: '',
+                values: (u, vals, space) => vals.map(v => +v.toFixed(1) + ""),
+            },
+        ],
+    };
+
+    chart = new uPlot(opts, data, document.body);
+}
+
+
