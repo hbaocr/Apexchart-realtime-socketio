@@ -53,8 +53,8 @@ async function cbuff_window_render(cbuff) {
                 //     let data = pool_data.splice(0,speed);
                 //     cbuff.insert_and_rotate_shift(data);
                 // } else {
-                    dist = Math.floor(window_size / 3);
-                    dist=1;
+                   // dist = Math.floor(window_size / 3);
+                   dist = 1;
                     let data = pool_data.splice(0,dist);
                     cbuff.insert_and_rotate_shift(data);
                // }
@@ -83,9 +83,11 @@ function period_render(t_render) {
     setTimeout(async () => {
         cbuff_window_render(cbuff,move_speed);
         let t1 = new Date().getTime();
+        
        console.log(`loop_interval=${(t1-t)} render_time: ${t_render}, window_sz:${cbuff.window_data.length} ,pool_buffer: ${pool_data.length}, sampling time ${sample_time} ms`);
        t=t1;
-        period_render(sample_time);
+       let t_r = Math.round(sample_time*0.9);
+        period_render(t_r);
     }, t_render);
 }
 period_render(t_render)

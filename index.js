@@ -30,7 +30,7 @@ setInterval(()=>{
     let utc = new Date().getTime() / 1000;
     let xdata=utc;
     let f2 = Math.random()*50;
-    let ydata = 50*Math.sin(2*10*Math.PI*1/fs*xdata)//+ 50*Math.sin(2*f2*Math.PI*1/fs*xdata);
+    let ydata = 50*Math.sin(2*10*Math.PI*1/fs*xdata);//+ 50*Math.sin(2*f2*Math.PI*1/fs*xdata);
     buffer.push({x:xdata, y:ydata});
     if(buffer.length>cnt){ // make sure in interval 2 sec emit 1 msg of array
         if(socket_sav){
