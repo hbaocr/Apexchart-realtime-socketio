@@ -12,6 +12,15 @@ let slide_speed=2;
 let pool_data = [];
 
 let window_data = [];
+// let utc=new Date().getTime()/1000;
+// for(let i=0;i<100;i++){
+//     let data={
+//         x:utc +i/1000,
+//         y:null
+//     }
+//     window_data.push(data);
+// }
+
 let t_render = 100;
 const observable = fromEvent(socket, 'newmsg');
 observable.pipe(
@@ -81,7 +90,7 @@ function slide_window_render(speed=2,window_size) {
 function period_render(t_render) {
     setTimeout(async () => {
         slide_window_render(slide_speed,wd_size);
-        console.log(`${new Date().getTime()} t_render : ${t_render}, window_size:${window_data.length} ,lead_num: ${pool_data.length}`);
+        console.log(`${new Date().getTime()} render_time: ${t_render}, window_sz:${window_data.length} ,pool_buffer: ${pool_data.length}`);
         period_render(t_render);
     }, t_render);
 }
@@ -142,6 +151,37 @@ window.onload = () => {
         legend: {
             show: false
         },
+        grid: {
+            show: true,
+            borderColor: '#90A4AE',
+            strokeDashArray: 0,
+            position: 'back',
+            xaxis: {
+                lines: {
+                    show: true
+                }
+            },   
+            yaxis: {
+                lines: {
+                    show: true
+                }
+            },  
+            row: {
+                colors: undefined,
+                opacity: 0.5
+            },  
+            column: {
+                colors: undefined,
+                opacity: 0.5
+            },  
+            padding: {
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0
+            },  
+        }
+        
     };
 
     chart = new ApexCharts(el, options);
