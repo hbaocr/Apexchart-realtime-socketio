@@ -10,6 +10,7 @@ const { map, mergeMap, delay, bufferTime, concatAll, concatMap } = rxjs.operator
 let wd_size = 100;
 let t_render = 100;
 let slide_speed=1;
+
 let pool_data = [];
 let window_data = [];
 
@@ -39,6 +40,8 @@ observable.subscribe(json => {
         let dat_len = jdat.length;
         sample_time = (jdat[dat_len-1].x-jdat[0].x) /dat_len;
         sample_time = Math.floor(sample_time*1000);
+        sample_time = sample_time <20?20:sample_time;
+        sample_time = sample_time >100?100:sample_time;
        // console.log(`sampling time ${sample_time} ms`);
 
     } catch (error) {
@@ -155,13 +158,18 @@ window.onload = () => {
             size: 0
         },
         xaxis: {
-            range: undefined,
+            // range: undefined,
+            // categories: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
             labels: {
-                // formatter: () => ' '
-            }
+                formatter: (value) => ' ',
+            },
+            tickAmount: 20,
         },
         yaxis: {
-            max: 100
+            max: 100,
+            labels: {
+                formatter: (value) => ' ',
+            },
         },
         legend: {
             show: false
