@@ -7,8 +7,8 @@ let chart;
 var socket = io();
 const { fromEvent, Observable, of, interval } = rxjs;
 const { map, mergeMap, delay, bufferTime, concatAll, concatMap } = rxjs.operators;
-let wd_size = 200;
-let slide_speed=2;
+let wd_size = 100;
+let slide_speed=1;
 let pool_data = [];
 
 let window_data = [];
@@ -42,10 +42,17 @@ function shift_n(speed_n,window_size = wd_size) {
     let dat = pool_data.splice(0,speed_n);
     window_data.splice(0,speed_n);
     window_data = [...window_data, ...dat];
-   
+    
 }
 
-
+function normal_time(wdata){
+    let t_start = wdata[0].x;
+    let tmp=[];
+    wdata.map(r=>{
+        tmp.push({x:r.x-t_start,y:r.y});
+    })
+    return tmp;
+}
 function slide_window_render(speed=2,window_size) {
     let lead_num = pool_data.length;
 
@@ -68,8 +75,10 @@ function slide_window_render(speed=2,window_size) {
                 }
             }
             // chart.setData(window_data);
+            
+            let render_buff=normal_time(window_data);
             chart.updateSeries([{
-                data: window_data
+                data: render_buff
             }])
         }
 
@@ -135,8 +144,10 @@ window.onload = () => {
             size: 0
         },
         xaxis: {
-            type: 'datetime',
             range: undefined,
+            labels: {
+                // formatter: () => ' '
+            }
         },
         yaxis: {
             max: 100
