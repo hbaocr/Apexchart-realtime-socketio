@@ -6,7 +6,7 @@ let XAXISRANGE = 777600000
 let chart;
 let socket = io();
 let sample_time = 100;
-let window_size=200;
+let window_size=600;
 let t_render = 50;
 let move_speed=2;
 let pool_data=[];
@@ -36,26 +36,32 @@ socket.on('newmsg', function (json) {
 })
 
 
-function cbuff_window_render(cbuff,speed =2) {
+async function cbuff_window_render(cbuff) {
     let lead_num = pool_data.length;
     let window_size = cbuff.window_size;
     if (chart) {
         if (lead_num > 0) {
 
-                let dist = lead_num - window_size + 1;
-                if (dist <= window_size) { 
-                    let data = pool_data.splice(0,speed);
-                    cbuff.insert_and_rotate_shift(data);
-                } else {
+                // let dist = lead_num - window_size + 1;
+                // if (dist <= window_size) { 
+                //     let data = pool_data.splice(0,speed);
+                //     cbuff.insert_and_rotate_shift(data);
+                // } else {
                     dist = Math.floor(window_size / 3);
+                    dist=1;
                     let data = pool_data.splice(0,dist);
                     cbuff.insert_and_rotate_shift(data);
-                }
+               // }
     
             let render_buff= cbuff.get_buffer();
-            chart.updateSeries([{
+            let ttt = new Date().getTime();
+            let cc=await chart.updateSeries([{
                 data: render_buff
-            }])
+            }]);
+            //cc.catch(console.log);
+            ttt=new Date().getTime()-ttt;
+            console.error(`----->measure updateSeries func = ${ttt}ms at buffsize ${render_buff.length}`);
+
         }
     }
 
@@ -66,12 +72,14 @@ function cbuff_window_render(cbuff,speed =2) {
 
 
 
-
+let t = new Date().getTime();
 
 function period_render(t_render) {
     setTimeout(async () => {
         cbuff_window_render(cbuff,move_speed);
-       console.log(`${new Date().getTime()} render_time: ${t_render}, window_sz:${cbuff.window_data.length} ,pool_buffer: ${pool_data.length}, sampling time ${sample_time} ms`);
+        let t1 = new Date().getTime();
+       console.log(`loop_interval=${(t1-t)} render_time: ${t_render}, window_sz:${cbuff.window_data.length} ,pool_buffer: ${pool_data.length}, sampling time ${sample_time} ms`);
+       t=t1;
         period_render(sample_time);
     }, t_render);
 }
@@ -93,10 +101,7 @@ window.onload = () => {
             animations: {
                 enabled: false,
                 easing: 'linear',
-                animateGradually: {
-                    enabled: true,
-                    delay: 150
-                },
+               
                 dynamicAnimation: {
                     speed: 1000
                 }
@@ -125,9 +130,11 @@ window.onload = () => {
         xaxis: {
             // range: undefined,
             // categories: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
-            labels: {
-                formatter: (value) => ' ',
-            },
+
+            // labels: {
+            //     formatter: (value) => ' ',
+            // },
+            type:'numeric',
             tickAmount: 20,
         },
         yaxis: {
