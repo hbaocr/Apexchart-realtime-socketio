@@ -10,14 +10,22 @@ let app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
-let interval =2000;
-let fs = 20;//20hz
+let interval =1500;
+let fs = 20;//20hz ==> 50ms
 let ts_ms = 1000*1/fs;
 
-let cnt = interval/fs;
+let cnt = interval/ts_ms;
 
 let buffer =[];
 let socket_sav ;
+let t=new Date().getTime();
+function calc_dt(){
+    let t1=new Date().getTime();
+    let dt= t1-t;
+    t=t1;
+    return dt;
+    
+}
 setInterval(()=>{
     let utc = new Date().getTime() / 1000;
     let xdata=utc;
@@ -27,6 +35,7 @@ setInterval(()=>{
         if(socket_sav){
             let msg = JSON.stringify(buffer);
             socket_sav.emit('newmsg', msg);
+            console.log(`dt: ${calc_dt()/1000}sec | buff len: ${buffer.length} | sampling time : ${ts_ms}`);
             buffer =[];
         } 
     }

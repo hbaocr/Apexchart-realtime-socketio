@@ -8,25 +8,43 @@ var socket = io();
 const { fromEvent, Observable, of, interval } = rxjs;
 const { map, mergeMap, delay, bufferTime, concatAll, concatMap } = rxjs.operators;
 let wd_size = 100;
+let t_render = 100;
 let slide_speed=1;
 let pool_data = [];
-
 let window_data = [];
 
 
-let t_render = 100;
+
+// const observable = fromEvent(socket, 'newmsg');
+// observable.pipe(
+//     mergeMap(json => JSON.parse(json)),// flatmap 
+//    // concatMap(x => of(x).pipe(delay(20))),//delay each element in 20ms
+// )
+// //.pipe(bufferTime(t_render))//Collect emitted values until provided time has passed, emit as array
+// .subscribe((msg) => {
+//     //console.log('--->event new msg'+ new Date().getTime() +JSON.stringify(msg));
+//     pool_data=[...pool_data,msg];
+//     // slide_window_render(slide_speed,wd_size);
+//     // console.log(`${new Date().getTime()} render_time: ${t_render}, window_sz:${window_data.length} ,pool_buffer: ${pool_data.length}`);
+ 
+// });
+
+
 const observable = fromEvent(socket, 'newmsg');
-observable.pipe(
-    mergeMap(json => JSON.parse(json)),// flatmap 
-    concatMap(x => of(x).pipe(delay(20))),//delay each element in 20ms
-    //bufferTime(100),//buffer untill 100ms then emit the array
-).subscribe((msg) => {
-    //console.log('--->event new msg'+ new Date().getTime() +JSON.stringify(msg));
-    pool_data.push(msg);
-});
+let sample_time = 100;
+observable.subscribe(json => {
+    try {
+        let jdat = JSON.parse(json);
+        pool_data=[...pool_data,...jdat];
+        let dat_len = jdat.length;
+        sample_time = (jdat[dat_len-1].x-jdat[0].x) /dat_len;
+        sample_time = Math.floor(sample_time*1000);
+       // console.log(`sampling time ${sample_time} ms`);
 
-let render_dat = [];
-
+    } catch (error) {
+        
+    }
+})
 
 function shift_one(window_size = wd_size) {
     // move 1 point
@@ -44,7 +62,6 @@ function shift_n(speed_n,window_size = wd_size) {
     window_data = [...window_data, ...dat];
     
 }
-
 function normal_time(wdata){
     let t_start = wdata[0].x;
     let tmp=[];
@@ -69,20 +86,14 @@ function slide_window_render(speed=2,window_size) {
                     shift_n(speed);
                 } else {
                     dist = window_data.length / 3;
-          
                     shift_n(Math.floor(dist));
-
                 }
             }
-            // chart.setData(window_data);
-            
             let render_buff=normal_time(window_data);
             chart.updateSeries([{
                 data: render_buff
             }])
         }
-
-
     }
 
 }
@@ -92,8 +103,8 @@ function slide_window_render(speed=2,window_size) {
 function period_render(t_render) {
     setTimeout(async () => {
         slide_window_render(slide_speed,wd_size);
-        console.log(`${new Date().getTime()} render_time: ${t_render}, window_sz:${window_data.length} ,pool_buffer: ${pool_data.length}`);
-        period_render(t_render);
+       console.log(`${new Date().getTime()} render_time: ${t_render}, window_sz:${window_data.length} ,pool_buffer: ${pool_data.length}, sampling time ${sample_time} ms`);
+        period_render(sample_time);
     }, t_render);
 }
 period_render(t_render)
