@@ -4,39 +4,25 @@
 var TICKINTERVAL = 86400000
 let XAXISRANGE = 777600000
 let chart;
-var socket = io();
-const { fromEvent, Observable, of, interval } = rxjs;
-const { map, mergeMap, delay, bufferTime, concatAll, concatMap } = rxjs.operators;
-let wd_size = 100;
-let t_render = 100;
-let slide_speed=1;
-
-let pool_data = [];
-let window_data = [];
-
-
-
-// const observable = fromEvent(socket, 'newmsg');
-// observable.pipe(
-//     mergeMap(json => JSON.parse(json)),// flatmap 
-//    // concatMap(x => of(x).pipe(delay(20))),//delay each element in 20ms
-// )
-// //.pipe(bufferTime(t_render))//Collect emitted values until provided time has passed, emit as array
-// .subscribe((msg) => {
-//     //console.log('--->event new msg'+ new Date().getTime() +JSON.stringify(msg));
-//     pool_data=[...pool_data,msg];
-//     // slide_window_render(slide_speed,wd_size);
-//     // console.log(`${new Date().getTime()} render_time: ${t_render}, window_sz:${window_data.length} ,pool_buffer: ${pool_data.length}`);
- 
-// });
-
-
-const observable = fromEvent(socket, 'newmsg');
+let socket = io();
 let sample_time = 100;
-observable.subscribe(json => {
+let window_size=200;
+let t_render = 50;
+let move_speed=2;
+let pool_data=[];
+let cbuff = new CircularRenderBuffer(window_size);
+socket.on('disconnect', function(){
+    console.log('reconnect ')
+    socket=io();
+    // reconnect
+ });
+socket.on('newmsg', function (json) {
     try {
         let jdat = JSON.parse(json);
-        pool_data=[...pool_data,...jdat];
+        for(let i=0;i<jdat.length;i++) {
+            pool_data.push(jdat[i].y);
+        }
+       
         let dat_len = jdat.length;
         sample_time = (jdat[dat_len-1].x-jdat[0].x) /dat_len;
         sample_time = Math.floor(sample_time*1000);
@@ -45,54 +31,28 @@ observable.subscribe(json => {
        // console.log(`sampling time ${sample_time} ms`);
 
     } catch (error) {
-        
+        console.log(error);
     }
 })
 
-function shift_one(window_size = wd_size) {
-    // move 1 point
-    let dat = pool_data.shift();
-    window_data = [...window_data, dat];
-    if (window_data.length > window_size) {
-        window_data.shift();
-    }
-}
 
-function shift_n(speed_n,window_size = wd_size) {
-    // move 1 point
-    let dat = pool_data.splice(0,speed_n);
-    window_data.splice(0,speed_n);
-    window_data = [...window_data, ...dat];
-    
-}
-function normal_time(wdata){
-    let t_start = wdata[0].x;
-    let tmp=[];
-    wdata.map(r=>{
-        tmp.push({x:r.x-t_start,y:r.y});
-    })
-    return tmp;
-}
-function slide_window_render(speed=2,window_size) {
+function cbuff_window_render(cbuff,speed =2) {
     let lead_num = pool_data.length;
-
+    let window_size = cbuff.window_size;
     if (chart) {
         if (lead_num > 0) {
 
-            if (window_data.length < window_size) {
-                shift_one(window_size);// move 1 point
-                //shift_n(speed)
-            } else { // full window
-
                 let dist = lead_num - window_size + 1;
-                if (dist <= window_size) {                    
-                    shift_n(speed);
+                if (dist <= window_size) { 
+                    let data = pool_data.splice(0,speed);
+                    cbuff.insert_and_rotate_shift(data);
                 } else {
-                    dist = window_data.length / 3;
-                    shift_n(Math.floor(dist));
+                    dist = Math.floor(window_size / 3);
+                    let data = pool_data.splice(0,dist);
+                    cbuff.insert_and_rotate_shift(data);
                 }
-            }
-            let render_buff=normal_time(window_data);
+    
+            let render_buff= cbuff.get_buffer();
             chart.updateSeries([{
                 data: render_buff
             }])
@@ -103,10 +63,15 @@ function slide_window_render(speed=2,window_size) {
 
 
 
+
+
+
+
+
 function period_render(t_render) {
     setTimeout(async () => {
-        slide_window_render(slide_speed,wd_size);
-       console.log(`${new Date().getTime()} render_time: ${t_render}, window_sz:${window_data.length} ,pool_buffer: ${pool_data.length}, sampling time ${sample_time} ms`);
+        cbuff_window_render(cbuff,move_speed);
+       console.log(`${new Date().getTime()} render_time: ${t_render}, window_sz:${cbuff.window_data.length} ,pool_buffer: ${pool_data.length}, sampling time ${sample_time} ms`);
         period_render(sample_time);
     }, t_render);
 }
@@ -126,7 +91,7 @@ window.onload = () => {
             height: 350,
             type: 'line',
             animations: {
-                enabled: true,
+                enabled: false,
                 easing: 'linear',
                 animateGradually: {
                     enabled: true,
@@ -213,15 +178,3 @@ window.onload = () => {
 }
 
 
-// socket.on('newmsg', function (records) {
-//     try {
-//         let arr = JSON.parse(records);
-  
-//         if(chart){
-//             buff = [...buff,...arr];
-//         }
-//     } catch (error) {
-
-//     }
-
-// })
