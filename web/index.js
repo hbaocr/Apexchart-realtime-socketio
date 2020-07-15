@@ -12,14 +12,7 @@ let slide_speed=2;
 let pool_data = [];
 
 let window_data = [];
-// let utc=new Date().getTime()/1000;
-// for(let i=0;i<100;i++){
-//     let data={
-//         x:utc +i/1000,
-//         y:null
-//     }
-//     window_data.push(data);
-// }
+
 
 let t_render = 100;
 const observable = fromEvent(socket, 'newmsg');
