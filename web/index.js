@@ -84,7 +84,9 @@ function period_render(t_render) {
         
         let t1 = new Date().getTime();
         cbuff_window_render(cbuff, move_speed);
-        console.log(`loop_interval=${(t1 - t)} render_time: ${t_render}, window_sz:${cbuff.window_data.length} ,pool_buffer: ${pool_data.length}, sampling time ${sample_time} ms`);
+        let str = `loop_time=${(t1 - t)} render_time:${t_render}, wid_sz:${cbuff.window_data.length} ,pbuffer:${pool_data.length}, ts:${sample_time} ms`;
+        console.log(str);
+       document.getElementById('text').innerHTML=str;
         t = t1;
         //let t_r = Math.round(sample_time*0.85);
         let t_r = calc_render_time(sample_time, pool_data.length);
