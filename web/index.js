@@ -5,8 +5,8 @@ var TICKINTERVAL = 86400000
 let XAXISRANGE = 777600000
 let chart;
 let socket = io();
-let sample_time = 100;
-let window_size = 60;
+let sample_time = 10;
+let window_size = 120;
 let t_render = 50;
 let move_speed = 2;
 let pool_data = [];
