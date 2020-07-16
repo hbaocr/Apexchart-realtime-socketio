@@ -10,8 +10,8 @@ let app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
-let interval =1500;
-let fs = 20;//20hz ==> 50ms
+let interval =2000;
+let fs = 2;//20hz ==> 50ms
 let ts_ms = 1000*1/fs;
 
 let cnt = interval/ts_ms;
