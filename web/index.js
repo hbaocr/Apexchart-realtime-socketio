@@ -98,7 +98,6 @@ period_render(t_render)
 
 
 
-
 window.onload = () => {
     //const el = document.getElementById('chart');
     let opts = {
