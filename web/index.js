@@ -101,7 +101,7 @@ period_render(t_render)
 window.onload = () => {
     //const el = document.getElementById('chart');
     let opts = {
-        title: "My Chart",
+       // title: "My Chart",
        // id: "chart",
         class: "uPlotChart",
         width: 800,
@@ -113,24 +113,28 @@ window.onload = () => {
         },
 
         series: [
-            {},
+            {
+                value: (u, v) => v == null ? "-" : v.toFixed(2)*50 + "ms", // x lengend display
+            },
             {
                 // initial toggled state (optional)
                 show: true,
-
                 spanGaps: false,
 
                 // in-legend display
                 label: "Y_value",
-                // value: (u, v) => v == null ? "-" : v.toFixed(2) + " MB",
+                value: (u, v) => v == null ? "-" : v.toFixed(2) + " MB", // y1 lengend display
                 stroke: "green",
             }
         ],
         axes: [
-            {},
             {
                 scale: '',
-                values: (u, vals, space) => vals.map(v => +v.toFixed(1) + ""),
+                values: (u, vals, space) => vals.map(v => +v.toFixed(1)*50 + "ms"), //x_axis display grid
+            },
+            {
+                scale: '',
+                values: (u, vals, space) => vals.map(v => +v.toFixed(2) + "MB"), //y1 display
             },
         ],
     };
