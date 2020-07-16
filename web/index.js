@@ -102,8 +102,8 @@ window.onload = () => {
     //const el = document.getElementById('chart');
     let opts = {
         title: "My Chart",
-        id: "chart",
-        class: "my-chart",
+       // id: "chart",
+        class: "uPlotChart",
         width: 800,
         height: 600,
         scales: {
@@ -135,5 +135,12 @@ window.onload = () => {
         ],
     };
 
-    chart = new uPlot(opts, [], document.body);
+    // this auto insert the chart to document.body
+    //chart = new uPlot(opts, [], document.body);
+
+    // create opharn dom
+    chart = new uPlot(opts, []);
+    //append to container <div id ='chart'>
+    document.getElementById('chart').appendChild(chart.root);
+
 }
