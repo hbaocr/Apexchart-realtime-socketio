@@ -6,10 +6,11 @@ let XAXISRANGE = 777600000
 let chart;
 let socket = io();
 let sample_time = 10;
-let window_size = 120;
+let window_size = 500;
 let t_render = 50;
 let move_speed = 2;
 let pool_data = [];
+let t_chart_render_ms=0;
 let cbuff = new CircularRenderBuffer(window_size);
 let x_val = [];
 for (let i = 0; i < window_size; i++) {
@@ -64,8 +65,8 @@ async function cbuff_window_render(cbuff) {
             let ttt = new Date().getTime();
             let cc = await chart.setData(render_buff);
             //cc.catch(console.log);
-            ttt = new Date().getTime() - ttt;
-            console.error(`----->measure updateSeries func = ${ttt}ms at buffsize ${render_buff[0].length}`);
+            t_chart_render_ms = new Date().getTime() - ttt;
+            console.error(`----->measure updateSeries func = ${t_chart_render_ms}ms at buffsize ${render_buff[0].length}`);
 
         }
     }
@@ -84,7 +85,7 @@ function period_render(t_render) {
         
         let t1 = new Date().getTime();
         cbuff_window_render(cbuff, move_speed);
-        let str = `loop_time=${(t1 - t)} render_time:${t_render}, wid_sz:${cbuff.window_data.length} ,pbuffer:${pool_data.length}, ts:${sample_time} ms`;
+        let str = `loop_time=${(t1 - t)}ms vs fps:${Math.floor(1000/t_render)}, chart_render_time:${t_chart_render_ms}ms, wid_sz:${cbuff.window_data.length}, pbuffer:${pool_data.length}, ts:${sample_time}ms`;
         console.log(str);
        document.getElementById('text').innerHTML=str;
         t = t1;
