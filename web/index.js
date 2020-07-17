@@ -6,10 +6,12 @@ let XAXISRANGE = 777600000
 let chart;
 let socket = io();
 let sample_time = 10;
-let window_size = 500;
+let window_size = 60;
 let t_render = 50;
 let move_speed = 2;
-let pool_data = [];
+//let pool_data = [];
+
+let cpool_buff = new RingBuffer(1000);
 let t_chart_render_ms=0;
 let cbuff = new CircularRenderBuffer(window_size);
 let x_val = [];
@@ -25,7 +27,8 @@ socket.on('newmsg', function (json) {
     try {
         let jdat = JSON.parse(json);
         for (let i = 0; i < jdat.length; i++) {
-            pool_data.push(jdat[i].y);
+            //pool_data.push(jdat[i].y);
+            cpool_buff.push(jdat[i].y);
         }
 
         let dat_len = jdat.length;
@@ -52,12 +55,14 @@ function calc_render_time(sample_time, lead_num, buffer_time = 2000) { //buffer 
 }
 
 async function cbuff_window_render(cbuff) {
-    let lead_num = pool_data.length;
+    //let lead_num = pool_data.length;
+    let lead_num = cpool_buff.get_size();
     if (chart) {
         if (lead_num > 0) {
           
             let dist = 1;
-            let data = pool_data.splice(0,dist);
+            // let data = pool_data.splice(0,dist);
+            let data = cpool_buff.pop(dist);
             cbuff.insert_and_rotate_shift(data);
             let y_buff = cbuff.get_buffer();
 
@@ -85,12 +90,16 @@ function period_render(t_render) {
         
         let t1 = new Date().getTime();
         cbuff_window_render(cbuff, move_speed);
-        let str = `loop_time=${(t1 - t)}ms vs fps:${Math.floor(1000/t_render)}, chart_render_time:${t_chart_render_ms}ms, wid_sz:${cbuff.window_data.length}, pbuffer:${pool_data.length}, ts:${sample_time}ms`;
+        //let str = `loop_time=${(t1 - t)}ms vs fps:${Math.floor(1000/t_render)}, chart_render_time:${t_chart_render_ms}ms, wid_sz:${cbuff.window_data.length}, pbuffer:${pool_data.length}, ts:${sample_time}ms`;
+        let str = `loop_time=${(t1 - t)}ms vs fps:${Math.floor(1000/t_render)}, chart_render_time:${t_chart_render_ms}ms, wid_sz:${cbuff.window_data.length}, pbuffer:${cpool_buff.get_size()}, ts:${sample_time}ms`;
+
         console.log(str);
        document.getElementById('text').innerHTML=str;
         t = t1;
         //let t_r = Math.round(sample_time*0.85);
-        let t_r = calc_render_time(sample_time, pool_data.length);
+       // let t_r = calc_render_time(sample_time, pool_data.length);
+        let t_r = calc_render_time(sample_time, cpool_buff.get_size());
+
         period_render(t_r);
     }, t_render);
 }
@@ -104,7 +113,7 @@ window.onload = () => {
        // title: "My Chart",
        // id: "chart",
         class: "uPlotChart",
-        width: 800,
+        width: 1200,
         height: 600,
         scales: {
             x: {

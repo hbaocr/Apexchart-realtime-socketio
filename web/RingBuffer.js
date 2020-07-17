@@ -1,6 +1,3 @@
-
-const util = require('util');
-const MISSING_POINT = null;
 class RingBuffer{
     constructor(size=1000,init_val=null){
         this.size=size;
@@ -10,6 +7,7 @@ class RingBuffer{
         }
         this.tail=0;
         this.head=0;
+        this.over_cnt=0;
     }
     _pop(){
         let v= this.buff[this.tail];
@@ -21,9 +19,15 @@ class RingBuffer{
         d= (d>=0)?d:(this.size+d)
         return d;
     }
+    get_over_count(){
+        return this.over_cnt;
+    }
     push(new_data){
         this.buff[this.head]=new_data;
         this.head= (this.head+1)%this.size;
+        if(this.head==this.tail){
+            this.over_cnt=this.over_cnt+1;
+        }
     }
     pop(n=1){
         let res=[];
@@ -40,11 +44,7 @@ class RingBuffer{
         }
         this.tail=0;
         this.head=0;
+        this.over_cnt=0;
     }
-}
 
-let aa = new RingBuffer(5);
-for(let i=0;i<9;i++){
-    aa.push(i);
-    console.log(...aa.buff);
 }
