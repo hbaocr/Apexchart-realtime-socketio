@@ -15,7 +15,7 @@ let interval =3000; // time in ms to emmit data buff  to chart
 let fs = 20;//20hz ==> 50ms : sampling rate of signal
 //
 
-let sin_f =0.5;// signal character
+let sin_f =1;// signal character
 
 
 

@@ -5,14 +5,16 @@ var TICKINTERVAL = 86400000
 let XAXISRANGE = 777600000
 let chart;
 let socket = io();
-let sample_time = 10;
+let sample_time = 100;
 let window_size = 60;
 let t_render = 50;
 let move_speed = 2;
 //let pool_data = [];
 
+let poller = new TimeoutPoller(sample_time);
+
 let cpool_buff = new RingBuffer(1000);
-let t_chart_render_ms=0;
+let t_chart_render_ms = 0;
 let cbuff = new CircularRenderBuffer(window_size);
 let x_val = [];
 for (let i = 0; i < window_size; i++) {
@@ -44,9 +46,9 @@ socket.on('newmsg', function (json) {
 })
 
 
-function calc_render_time(sample_time, lead_num, buffer_time = 2000) { //buffer 2 sec
+function calc_render_time(sample_time, lead_num, buffer_time = 1000) { //buffer 1 sec
     //calc the render time to make sure there are always having the data in pool_buffer;
-    sample_time = sample_time<20?20: sample_time;
+    sample_time = sample_time < 20 ? 20 : sample_time;
     let expected_lead_num = Math.floor(buffer_time / sample_time);
     let dn = (lead_num - expected_lead_num) / expected_lead_num;
     dn = dn > 0.5 ? 0.5 : dn;
@@ -59,7 +61,7 @@ async function cbuff_window_render(cbuff) {
     let lead_num = cpool_buff.get_size();
     if (chart) {
         if (lead_num > 0) {
-          
+
             let dist = 1;
             // let data = pool_data.splice(0,dist);
             let data = cpool_buff.pop(dist);
@@ -78,40 +80,28 @@ async function cbuff_window_render(cbuff) {
 
 }
 
-
-
-
-
-
 let t = new Date().getTime();
+async function exec_render() {
+    let t1 = new Date().getTime();
+    cbuff_window_render(cbuff, move_speed);
+    let str = `loop_time=${(t1 - t)}ms vs fps:${Math.floor(1000 / t_render)}, chart_render_time:${t_chart_render_ms}ms, wid_sz:${cbuff.window_data.length}, pbuffer:${cpool_buff.get_size()}, ts:${sample_time}ms`;
 
-function period_render(t_render) {
-    setTimeout(async () => {
-        
-        let t1 = new Date().getTime();
-        cbuff_window_render(cbuff, move_speed);
-        //let str = `loop_time=${(t1 - t)}ms vs fps:${Math.floor(1000/t_render)}, chart_render_time:${t_chart_render_ms}ms, wid_sz:${cbuff.window_data.length}, pbuffer:${pool_data.length}, ts:${sample_time}ms`;
-        let str = `loop_time=${(t1 - t)}ms vs fps:${Math.floor(1000/t_render)}, chart_render_time:${t_chart_render_ms}ms, wid_sz:${cbuff.window_data.length}, pbuffer:${cpool_buff.get_size()}, ts:${sample_time}ms`;
+    console.log(str);
+    document.getElementById('text').innerHTML = str;
+    t = t1;
 
-        console.log(str);
-       document.getElementById('text').innerHTML=str;
-        t = t1;
-        //let t_r = Math.round(sample_time*0.85);
-       // let t_r = calc_render_time(sample_time, pool_data.length);
-        let t_r = calc_render_time(sample_time, cpool_buff.get_size());
-
-        period_render(t_r);
-    }, t_render);
 }
-period_render(t_render)
+
+
 
 
 
 window.onload = () => {
     //const el = document.getElementById('chart');
+    document.getElementById('btnStop').innerHTML="Click Here To Start";
     let opts = {
-       // title: "My Chart",
-       // id: "chart",
+        // title: "My Chart",
+        // id: "chart",
         class: "uPlotChart",
         width: 1200,
         height: 600,
@@ -123,7 +113,7 @@ window.onload = () => {
 
         series: [
             {
-                value: (u, v) => v == null ? "-" : v.toFixed(2)*50 + "ms", // x lengend display
+                value: (u, v) => v == null ? "-" : v.toFixed(2) * 50 + "ms", // x lengend display
             },
             {
                 // initial toggled state (optional)
@@ -139,7 +129,7 @@ window.onload = () => {
         axes: [
             {
                 scale: '',
-                values: (u, vals, space) => vals.map(v => +v.toFixed(1)*50 + "ms"), //x_axis display grid
+                values: (u, vals, space) => vals.map(v => +v.toFixed(1) * 50 + "ms"), //x_axis display grid
             },
             {
                 scale: '',
@@ -155,5 +145,25 @@ window.onload = () => {
     chart = new uPlot(opts, []);
     //append to container <div id ='chart'>
     document.getElementById('chart').appendChild(chart.root);
+
+    document.getElementById('btnStop').onclick = ()=>{
+        if(poller.is_stop){
+
+            poller.updatePeriod(sample_time);
+            poller.startPoll(async () => {
+                await exec_render();
+                let t_r = calc_render_time(sample_time, cpool_buff.get_size());
+                poller.updatePeriod(t_r);
+            })
+            document.getElementById('btnStop').innerHTML="Click Here To Stop";
+
+
+        }else{
+            poller.stopPoll();
+            document.getElementById('btnStop').innerHTML="Click Here To Start";
+
+        }
+       
+    };
 
 }
