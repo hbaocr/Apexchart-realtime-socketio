@@ -11,7 +11,7 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
 // edit signal here
-let interval =3000; // time in ms to emmit data buff  to chart
+let interval =1000; // time in ms to emmit data buff  to chart
 let fs = 20;//20hz ==> 50ms : sampling rate of signal
 //
 
@@ -25,26 +25,35 @@ let cnt = interval/ts_ms;
 
 let buffer =[];
 let socket_sav ;
-let t=new Date().getTime();
-function calc_dt(){
-    let t1=new Date().getTime();
-    let dt= t1-t;
-    t=t1;
-    return dt;
-    
-}
+
+
 let xdata=0;
+let t=new Date().getTime();
 setInterval(()=>{
     //let utc = new Date().getTime() / 1000;
+   
+
      xdata=xdata+1;
-    let f2 = Math.random()*50;
-    let ydata = 50*Math.sin(2*sin_f*Math.PI*xdata/fs);//+ 50*Math.sin(2*f2*Math.PI*1/fs*xdata);
-    buffer.push({x:xdata, y:ydata});
+     t = xdata/fs;
+ 
+    let ydata = 50*Math.sin(2*Math.PI*sin_f*t);//+ 50*Math.sin(2*f2*Math.PI*1/fs*xdata);
+    buffer.push({x:t, y:ydata});
     if(buffer.length>cnt){ // make sure in interval 2 sec emit 1 msg of array
+       
+
         if(socket_sav){
-            let msg = JSON.stringify(buffer);
+            let t1=new Date().getTime();
+
+            let emit_data ={
+                data:buffer,
+                ts : ts_ms
+            }
+
+            let msg = JSON.stringify(emit_data);
+
             socket_sav.emit('newmsg', msg);
-            console.log(`dt: ${calc_dt()/1000}sec | buff len: ${buffer.length} | sampling time : ${ts_ms}`);
+            let dt = (buffer[buffer.length-1].x -buffer[0].x)/(buffer.length -1);
+            console.log(`dt: ${t1/1000}sec | buff len: ${buffer.length} | sampling time : ${ts_ms} | ${1000*dt}`);
             buffer =[];
         } 
     }
