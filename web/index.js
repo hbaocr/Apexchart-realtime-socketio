@@ -5,7 +5,7 @@ var TICKINTERVAL = 86400000
 let XAXISRANGE = 777600000
 let chart;
 let socket = io();
-let sample_time = 100;
+let sample_time = 80;
 let window_size = 60;
 let t_render = 50;
 let move_speed = 2;
@@ -13,7 +13,7 @@ let move_speed = 2;
 
 let poller = new TimeoutPoller(sample_time);
 
-let cpool_buff = new RingBuffer(1000);
+let cpool_buff = new RingBuffer(300);
 let t_chart_render_ms = 0;
 let cbuff = new CircularRenderBuffer(window_size);
 let x_val = [];
@@ -80,16 +80,10 @@ async function cbuff_window_render(cbuff) {
 
 }
 
-let t = new Date().getTime();
+
 async function exec_render() {
-    let t1 = new Date().getTime();
+  
     cbuff_window_render(cbuff, move_speed);
-    let str = `loop_time=${(t1 - t)}ms vs fps:${Math.floor(1000 / t_render)}, chart_render_time:${t_chart_render_ms}ms, wid_sz:${cbuff.window_data.length}, pbuffer:${cpool_buff.get_size()}, ts:${sample_time}ms`;
-
-    console.log(str);
-    document.getElementById('text').innerHTML = str;
-    t = t1;
-
 }
 
 
@@ -146,13 +140,20 @@ window.onload = () => {
     //append to container <div id ='chart'>
     document.getElementById('chart').appendChild(chart.root);
 
+
+    let t = new Date().getTime();
     document.getElementById('btnStop').onclick = ()=>{
         if(poller.is_stop){
 
             poller.updatePeriod(sample_time);
             poller.startPoll(async () => {
+                let t1 = new Date().getTime();
                 await exec_render();
                 let t_r = calc_render_time(sample_time, cpool_buff.get_size());
+                let str = `loop_time=${(t1 - t)}ms vs fps:${Math.floor(1000 / poller.period)}, chart_render_time:${t_chart_render_ms}ms, wid_sz:${cbuff.window_data.length}, pbuffer:${cpool_buff.get_size()}, ts:${sample_time}ms`;
+                console.log(str);
+                document.getElementById('text').innerHTML = str;
+                t = t1;
                 poller.updatePeriod(t_r);
             })
             document.getElementById('btnStop').innerHTML="Click Here To Stop";

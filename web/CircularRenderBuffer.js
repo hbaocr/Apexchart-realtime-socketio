@@ -4,7 +4,7 @@ class CircularRenderBuffer{
       
         this.window_data=[];
         this.current_pointer=0;
-        this.window_size=window_size;
+        this.window_size=window_size>5?window_size:5;
         this.gap_space = Math.floor(window_size*2/100)+1; // gap space is around 2% of full screen
      
         // null all ==> discontinue point
