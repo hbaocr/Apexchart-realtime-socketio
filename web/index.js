@@ -1,7 +1,7 @@
 
 let chart;
 let socket = io();
-let Tr = 100;
+let Tr = 80;
 let Ts_default=100;
 let ts = 50;
 let Tbuff = 4000;
@@ -65,7 +65,7 @@ function calc_number_of_rendered_sample(cpool_buff,Tr,sample_time,Tbuff=4000){
     let d = (pool_length-Nmin);
     d = (d>1)?d:1; //  d >= 1 
     d = Math.min(theory_pop,d);
-    log.npop=`${d}/${theory_pop}`;
+    log.npop_vs_theory=`${d}/${theory_pop}`;
     return d;
 }
 
@@ -73,7 +73,7 @@ function calc_number_of_rendered_sample(cpool_buff,Tr,sample_time,Tbuff=4000){
 
 async function cbuff_window_render(cbuff) {
     let lead_num = cpool_buff.get_size();
-    log.npool = `${lead_num} / ${Nbuff}`;
+    log.npool_vs_Nbuff = `${lead_num} / ${Nbuff}`;
 
     if (chart) {
         if (lead_num > 0) {
